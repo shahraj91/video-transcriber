@@ -1,6 +1,8 @@
 # Video Transcription Pipeline
 
-Extracts audio from a video, transcribes it with **Whisper** (local/offline), refines the text with your **local Llama model** via Ollama, and saves both a `.txt` and `.srt` file.
+🔒 **Fully local & offline** — no data leaves your machine. No cloud APIs, no internet required.
+
+Extracts audio from a video, transcribes it with **Whisper** (runs locally on your hardware), refines the text with your **local Llama model** via Ollama, and saves both a `.txt` and `.srt` file — entirely on your own machine.
 
 ---
 
