@@ -1,6 +1,6 @@
-# Video Transcription Pipeline
+# Video Transcriber
 
-🔒 **Fully local & offline** — no data leaves your machine. No cloud APIs, no internet required.
+> 🔒 **Fully local & offline** — no data leaves your machine. No cloud APIs, no internet required.
 
 Extracts audio from a video, transcribes it with **Whisper** (runs locally on your hardware), refines the text with your **local Llama model** via Ollama, and saves both a `.txt` and `.srt` file — entirely on your own machine.
 
@@ -9,7 +9,26 @@ Extracts audio from a video, transcribes it with **Whisper** (runs locally on yo
 ## Pipeline
 
 ```
-video → ffmpeg (audio) → Whisper (STT) → Llama (refine) → .txt + .srt
+video → ffmpeg (audio) → Whisper (STT) → Llama (refine) → .txt + .srt + extras
+```
+
+---
+
+## Project Structure
+
+```
+VoiceToText/
+├── transcribe.py              # Entry point — orchestrates the pipeline
+├── config.py                  # All settings in one place (models, API URL)
+├── requirements.txt           # Python dependencies
+├── README.md
+└── pipeline/
+    ├── __init__.py            # Makes pipeline a Python package
+    ├── audio.py               # AudioExtractor — ffmpeg audio extraction
+    ├── transcriber.py         # WhisperTranscriber — speech-to-text
+    ├── llama.py               # LlamaClient — shared Ollama API client
+    ├── enhancers.py           # Llama features: refine, speakers, summary, actions, translate
+    └── output.py              # OutputManager — timestamped folder + file saving
 ```
 
 ---
@@ -18,84 +37,104 @@ video → ffmpeg (audio) → Whisper (STT) → Llama (refine) → .txt + .srt
 
 ### 1. ffmpeg
 ```bash
-# macOS
-brew install ffmpeg
-
 # Ubuntu/Debian
 sudo apt install ffmpeg
 
-# Windows – download from https://ffmpeg.org/download.html
+# macOS
+brew install ffmpeg
 ```
 
-### 2. Python dependencies
+### 2. Python virtual environment + dependencies
 ```bash
+cd ~/Documents/VoiceToText
+python3 -m venv venv
+source venv/bin/activate
 pip install openai-whisper
 ```
-> `openai-whisper` will also install `torch` automatically.
 
-### 3. Ollama + your Llama model
-Make sure Ollama is running and your model is pulled:
+### 3. Ollama + Llama model
 ```bash
-ollama serve           # starts the local API on http://localhost:11434
-ollama pull llama3     # or whichever model you use
+# Check available models (if running in Docker):
+sudo docker exec -it <container_id> ollama list
+
+# Verify API is reachable from host:
+curl http://localhost:11434/api/tags
 ```
 
 ---
 
 ## Configuration
 
-Open `transcribe.py` and update these two lines near the top to match your setup:
+Open `config.py` and update to match your setup:
 
 ```python
-LLAMA_MODEL   = "llama3:8b"     # your Ollama model name  (ollama list)
-WHISPER_MODEL = "base"       # tiny | base | small | medium | large
+LLAMA_API_URL = "http://localhost:11434/api/generate"
+LLAMA_MODEL   = "llama3:8b"    # your Ollama model name
+WHISPER_MODEL = "base"         # tiny | base | small | medium | large
+LLAMA_TIMEOUT = 180            # seconds to wait for Llama response
 ```
 
-| Whisper model | Speed  | Accuracy |
-|---------------|--------|----------|
-| tiny          | fastest | lowest  |
-| base          | fast    | good    |
-| small         | medium  | better  |
-| medium        | slow    | great   |
-| large         | slowest | best    |
+| Whisper model | Speed | Accuracy | VRAM needed |
+|---|---|---|---|
+| tiny | fastest | ⭐⭐ | ~1 GB |
+| base | fast | ⭐⭐⭐ | ~1 GB |
+| small | moderate | ⭐⭐⭐ | ~2 GB |
+| medium | slow | ⭐⭐⭐⭐ | ~5 GB |
+| large | slowest | ⭐⭐⭐⭐⭐ | ~10 GB |
 
 ---
 
 ## Usage
 
 ```bash
-# Basic – output files saved next to the video
-python transcribe.py path/to/video.mp4
+source venv/bin/activate
 
-# Custom output directory
-python transcribe.py path/to/video.mp4 --output-dir ./transcripts
-
-# Skip Llama refinement (use raw Whisper text)
-python transcribe.py path/to/video.mp4 --no-llama
+# Basic — all features enabled
+python3 transcribe.py path/to/video.mp4
 
 # Use a larger Whisper model
-python transcribe.py path/to/video.mp4 --whisper-model small
+python3 transcribe.py video.mp4 --whisper-model medium
 
-# Override Llama model at runtime
-python transcribe.py path/to/video.mp4 --llama-model mistral
+# Translate transcript to another language
+python3 transcribe.py video.mp4 --language Hindi
+
+# Skip specific features
+python3 transcribe.py video.mp4 --no-speakers
+python3 transcribe.py video.mp4 --no-summary --no-actions
+
+# Skip all Llama features (raw Whisper output only)
+python3 transcribe.py video.mp4 --no-llama
+
+# Save to a custom base directory
+python3 transcribe.py video.mp4 --output-dir ~/transcripts
 ```
 
 ---
 
 ## Output
 
-For a video named `lecture.mp4`, two files are created:
+Each run creates a **timestamped folder** next to the video (or in `--output-dir`):
 
-- `lecture_transcript.txt` — full cleaned transcript (Llama-refined)
-- `lecture_transcript.srt` — subtitle file with timestamps from Whisper
+```
+VID_20230624_231126_20260313_142305/
+├── VID_20230624_231126_transcript.txt
+├── VID_20230624_231126_transcript.srt
+├── VID_20230624_231126_speakers.txt
+├── VID_20230624_231126_summary.txt
+├── VID_20230624_231126_actions.txt
+└── VID_20230624_231126_translation_Hindi.txt   (only if --language passed)
+```
 
 ---
 
 ## Troubleshooting
 
 | Issue | Fix |
-|-------|-----|
-| `ffmpeg not found` | Install ffmpeg and ensure it's on your PATH |
-| `whisper not found` | `pip install openai-whisper` |
-| Llama refinement skipped | Make sure `ollama serve` is running; or use `--no-llama` |
-| Wrong model name | Run `ollama list` to see available models |
+|---|---|
+| `ffmpeg not found` | `sudo apt install ffmpeg` |
+| `whisper not found` | Activate venv then `pip install openai-whisper` |
+| `externally-managed-environment` | Use venv — see Prerequisites |
+| Llama refinement skipped | Run `curl http://localhost:11434/api/tags` to verify Ollama is up |
+| Wrong model name | `sudo docker exec -it <id> ollama list` |
+| CUDA out of memory | `CUDA_VISIBLE_DEVICES="" python3 transcribe.py ...` to force CPU |
+| Flag not recognized | Use hyphens not underscores: `--whisper-model` not `--whisper_model` |
