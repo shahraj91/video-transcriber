@@ -45,7 +45,7 @@ ollama pull llama3     # or whichever model you use
 Open `transcribe.py` and update these two lines near the top to match your setup:
 
 ```python
-LLAMA_MODEL   = "llama3"     # your Ollama model name  (ollama list)
+LLAMA_MODEL   = "llama3:8b"     # your Ollama model name  (ollama list)
 WHISPER_MODEL = "base"       # tiny | base | small | medium | large
 ```
 
