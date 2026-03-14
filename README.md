@@ -14,11 +14,23 @@ video → ffmpeg (audio) → Whisper (STT) → Llama (refine) → .txt + .srt + 
 
 ---
 
+## Usage
+
+Two ways to run:
+
+| Mode | Command | Best for |
+|---|---|---|
+| **Web UI** | `streamlit run ui.py` | Interactive use, easy downloads |
+| **CLI** | `python3 transcribe.py video.mp4` | Scripting, automation, CI |
+
+---
+
 ## Project Structure
 
 ```
 VoiceToText/
-├── transcribe.py              # Entry point — orchestrates the pipeline
+├── transcribe.py              # CLI entry point — orchestrates the pipeline
+├── ui.py                      # Streamlit web UI
 ├── config.py                  # All settings in one place (models, API URL)
 ├── requirements.txt           # Python dependencies
 ├── pytest.ini                 # Test configuration
@@ -69,7 +81,7 @@ brew install ffmpeg
 cd ~/Documents/VoiceToText
 python3 -m venv venv
 source venv/bin/activate
-pip install openai-whisper ffmpeg-python pytest
+pip install -r requirements.txt
 ```
 
 ### 3. Ollama + Llama model
@@ -104,7 +116,24 @@ LLAMA_TIMEOUT = 180            # seconds to wait for Llama response
 
 ---
 
-## Usage
+## Web UI
+
+```bash
+source venv/bin/activate
+streamlit run ui.py
+# Opens at http://localhost:8501
+```
+
+The UI lets you:
+- Upload any video file (mp4, mov, avi, mkv, webm, m4v, flv)
+- Select Whisper model size and Ollama model
+- Toggle individual Llama features on/off
+- Enter a translation language
+- View all outputs in tabs and download them individually or as a ZIP
+
+---
+
+## CLI Usage
 
 ```bash
 source venv/bin/activate
@@ -217,3 +246,5 @@ pytest tests/test_real.py       # Real file tests (assets required)
 | Flag not recognized | Use hyphens not underscores: `--whisper-model` not `--whisper_model` |
 | Real tests skipped | Run `python tests/assets/generate_assets.py` first |
 | Real tests all skip | Check `ASSETS_DIR` resolves correctly — needs `Path(__file__).resolve()` |
+| Streamlit email prompt on first run | Create `~/.streamlit/credentials.toml` with `[general]\nemail = ""` |
+| Streamlit port in use | `streamlit run ui.py --server.port 8502` |

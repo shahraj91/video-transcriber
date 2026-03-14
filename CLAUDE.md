@@ -8,6 +8,13 @@ Fully local, offline video transcription pipeline. Extracts audio from video, tr
 
 ## How to Run
 
+### Web UI (recommended for interactive use)
+```bash
+streamlit run ui.py
+# Opens at http://localhost:8501
+```
+
+### CLI (for scripting/automation)
 ```bash
 # Basic usage
 python3 transcribe.py video.mp4
@@ -31,8 +38,9 @@ python3 transcribe.py video.mp4 --output-dir ~/transcripts
 
 **Prerequisites:**
 - ffmpeg installed on system
-- `pip install -r requirements.txt` (openai-whisper, ffmpeg-python, pytest)
+- `pip install -r requirements.txt` (openai-whisper, ffmpeg-python, streamlit, pytest)
 - Ollama running locally at `http://localhost:11434` (optional — degrades gracefully if absent)
+- First-run Streamlit fix: create `~/.streamlit/credentials.toml` with `[general]\nemail = ""`
 
 ---
 
@@ -73,8 +81,9 @@ Video File
 ```
 VoiceToText/
 ├── transcribe.py          # CLI entry point — orchestrates the full pipeline
+├── ui.py                  # Streamlit web UI (upload, settings, download)
 ├── config.py              # Centralized settings: Ollama URL, model names, timeouts
-├── requirements.txt       # openai-whisper, ffmpeg-python, pytest
+├── requirements.txt       # openai-whisper, ffmpeg-python, streamlit, pytest
 ├── pytest.ini             # Pytest config + custom markers (real, llama)
 ├── .gitignore
 ├── README.md
@@ -113,6 +122,11 @@ VoiceToText/
 
 ### `transcribe.py` — CLI Orchestrator
 Parses args, validates input, instantiates all pipeline classes, runs them in sequence, cleans up temp audio file, prints output folder path.
+
+### `ui.py` — Streamlit Web UI
+Sidebar: Whisper model selector, Ollama model input, Llama feature toggles (disabled when Llama off), translation language input.
+Main: video file uploader → Transcribe button → live `st.status` progress → tabbed results view with per-file download buttons and a "Download all as ZIP" button.
+Uses `st.session_state` to persist results across reruns. Saves uploaded file to a named temp file so `OutputManager` gets a proper stem.
 
 ### `config.py` — Settings
 ```python
@@ -209,4 +223,5 @@ python3 tests/assets/generate_assets.py
 | openai-whisper | Speech-to-text | Yes — hard fail without it |
 | Ollama + llama3:8b | LLM enhancement | No — graceful fallback |
 | ffmpeg-python | Python ffmpeg wrapper | Yes (pip) |
+| streamlit | Web UI server | Yes for UI, not needed for CLI |
 | pytest | Testing | Dev only |
