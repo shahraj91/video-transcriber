@@ -107,6 +107,7 @@ VoiceToText/
     ├── test_cli.py         # 21 CLI tests (subprocess)
     ├── test_ux.py          # 22 UX tests (subprocess)
     ├── test_real.py        # 29 real file tests (requires assets + Whisper)
+    ├── test_ui.py          # 26 unit tests — run_pipeline() generator
     └── assets/
         ├── generate_assets.py   # Creates synthetic test videos (run this to regenerate)
         ├── english_clear.mp4
@@ -186,6 +187,20 @@ Each run produces a folder `{video_name}_{YYYYMMDD_HHMMSS}/` containing:
 ---
 
 ## Running Tests
+
+| File | Tests | What it tests | Requires |
+|---|---|---|---|
+| `test_audio.py` | 10 | AudioExtractor — ffmpeg flags, failure handling | Mocked |
+| `test_transcriber.py` | 14 | WhisperTranscriber — lazy loading, segments | Mocked |
+| `test_llama.py` | 11 | LlamaClient — HTTP calls, fallback, payload | Mocked |
+| `test_enhancers.py` | 20 | All 5 enhancers — prompts, fallbacks | Mocked |
+| `test_output.py` | 21 | OutputManager — folders, files, SRT format | Mocked |
+| `test_integration.py` | 7 | Classes working together, E2E | Mocked |
+| `test_cli.py` | 21 | CLI flags, --help, invalid args | Mocked |
+| `test_ux.py` | 22 | Progress feedback, errors, output quality | Mocked |
+| `test_ui.py` | 26 | run_pipeline() — steps, results, delegation | Mocked |
+| `test_real.py` | 29 | Real ffmpeg, Whisper, pipeline, edge cases | Real assets |
+| **Total** | **196** | | |
 
 ```bash
 # Fast tests only (167 tests, no external dependencies)
