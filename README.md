@@ -221,7 +221,8 @@ pytest tests/test_real.py       # Real file tests (assets required)
 | `test_cli.py` | CLI flags, --help, invalid args | 21 | Mocked |
 | `test_ux.py` | Progress, output quality, SRT validity | 22 | Mocked |
 | `test_real.py` | Real ffmpeg, Whisper, pipeline, edge cases | 29 | Real assets |
-| **Total** | | **170** | |
+| `test_ui.py` | run_pipeline() — steps, results, delegation | 26 | Mocked |
+| **Total** | | **196** | |
 
 ### Test types
 - **Unit** — each class tested in isolation with mocked dependencies

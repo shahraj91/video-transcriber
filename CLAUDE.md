@@ -188,7 +188,7 @@ Each run produces a folder `{video_name}_{YYYYMMDD_HHMMSS}/` containing:
 ## Running Tests
 
 ```bash
-# Fast tests only (141 tests, no external dependencies)
+# Fast tests only (167 tests, no external dependencies)
 pytest
 
 # All tests including real file tests (requires assets + Whisper installed)
