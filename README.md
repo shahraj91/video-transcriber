@@ -180,7 +180,7 @@ VID_20230624_231126_20260313_142305/
 
 The test suite has two layers — fast mock tests and slower real file tests.
 
-### Mock tests (141) — run on any machine, no dependencies needed
+### Mock tests (167) — run on any machine, no dependencies needed
 ```bash
 source venv/bin/activate
 pytest
