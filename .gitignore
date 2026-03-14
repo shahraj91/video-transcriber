@@ -4,4 +4,10 @@ __pycache__/
 *.wav
 *_transcript.txt
 *_transcript.srt
-.DS_Store
+
+# Generated test assets — run generate_assets.py to recreate
+tests/assets/*.mp4
+tests/assets/*.wav
+
+# Your own video files — too large for git
+tests/assets/your_video.*

@@ -1,12 +1,14 @@
 # tests/conftest.py
 # Shared pytest fixtures available to all test files automatically.
+# Includes both mock fixtures (for unit/integration tests)
+# and real file fixtures (for pytest -m real tests).
 
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
 
-# ── Sample data fixtures ──────────────────────────────────────────────────────
+# ── Mock fixtures ─────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def sample_segments():
@@ -53,3 +55,59 @@ def tmp_audio(tmp_path):
     audio = tmp_path / "test_audio.wav"
     audio.write_bytes(b"fake audio content")
     return audio
+
+
+# ── Real file fixtures ────────────────────────────────────────────────────────
+# Used by tests/test_real.py — requires assets to be generated first.
+# Run: python tests/assets/generate_assets.py
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+
+
+def require_asset(filename: str) -> Path:
+    """Return path to asset, skipping the test if file doesn't exist."""
+    path = ASSETS_DIR / filename
+    if not path.exists():
+        pytest.skip(
+            f"Asset '{filename}' not found. "
+            f"Run: python tests/assets/generate_assets.py"
+        )
+    return path
+
+
+@pytest.fixture
+def english_clear_video() -> Path:
+    """8-second speech-rhythm audio — primary real transcription test."""
+    return require_asset("english_clear.mp4")
+
+
+@pytest.fixture
+def silence_video() -> Path:
+    """5-second silent video — edge case, no speech."""
+    return require_asset("silence.mp4")
+
+
+@pytest.fixture
+def background_noise_video() -> Path:
+    """8-second speech + white noise — noisy audio test."""
+    return require_asset("background_noise.mp4")
+
+
+@pytest.fixture
+def short_clip_video() -> Path:
+    """2-second clip — minimal audio edge case."""
+    return require_asset("short_clip.mp4")
+
+
+@pytest.fixture
+def multi_tone_video() -> Path:
+    """Alternating low/high tones — simulates speaker changes."""
+    return require_asset("multi_tone.mp4")
+
+
+@pytest.fixture
+def real_output_dir(tmp_path) -> Path:
+    """Temporary output directory for real pipeline runs."""
+    out = tmp_path / "real_outputs"
+    out.mkdir()
+    return out

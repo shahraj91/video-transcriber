@@ -32,15 +32,23 @@ VoiceToText/
 │   └── output.py              # OutputManager — timestamped folder + file saving
 └── tests/
     ├── __init__.py
-    ├── conftest.py            # Shared fixtures
-    ├── test_audio.py          # AudioExtractor — 7 tests
-    ├── test_transcriber.py    # WhisperTranscriber — 11 tests
-    ├── test_llama.py          # LlamaClient — 7 tests
+    ├── conftest.py            # Shared fixtures (mock + real file)
+    ├── test_audio.py          # AudioExtractor — 10 tests
+    ├── test_transcriber.py    # WhisperTranscriber — 14 tests
+    ├── test_llama.py          # LlamaClient — 11 tests
     ├── test_enhancers.py      # All 5 enhancer classes — 20 tests
-    ├── test_output.py         # OutputManager — 14 tests
-    ├── test_integration.py    # Integration + end-to-end — 5 tests
+    ├── test_output.py         # OutputManager — 21 tests
+    ├── test_integration.py    # Integration + end-to-end — 7 tests
     ├── test_cli.py            # CLI flags, args, error handling — 21 tests
-    └── test_ux.py             # Progress feedback, errors, output quality, SRT — 22 tests
+    ├── test_ux.py             # Progress feedback, errors, output quality, SRT — 22 tests
+    ├── test_real.py           # Real file tests — 29 tests (pytest -m real)
+    └── assets/
+        ├── generate_assets.py # Generates synthetic test video files
+        ├── english_clear.mp4  # 8s speech-rhythm audio
+        ├── silence.mp4        # 5s silence — edge case
+        ├── background_noise.mp4 # Speech + white noise
+        ├── short_clip.mp4     # 2s clip — minimal audio
+        └── multi_tone.mp4     # Alternating tones — speaker change simulation
 ```
 
 ---
@@ -141,46 +149,58 @@ VID_20230624_231126_20260313_142305/
 
 ## Testing
 
-All tests use mocks — no real Whisper model, ffmpeg, or Ollama calls are made. Tests run fast and work on any machine.
+The test suite has two layers — fast mock tests and slower real file tests.
 
-### Run all tests
+### Mock tests (141) — run on any machine, no dependencies needed
 ```bash
 source venv/bin/activate
 pytest
 ```
 
-### Run a specific file
+### Real file tests (29) — require Whisper and generated assets
+```bash
+# Step 1: Generate test assets (run once)
+python tests/assets/generate_assets.py
+
+# Step 2: Run real tests
+pytest -m real -v
+
+# Skip Ollama-dependent tests (run without Ollama running)
+pytest -m "real and not llama" -v
+```
+
+### Test your own video
+Drop any `.mp4` into `tests/assets/your_video.mp4` — it will be picked up automatically by `test_your_own_video` when running `pytest -m real`.
+
+### Run specific files
 ```bash
 pytest tests/test_cli.py        # CLI behaviour
 pytest tests/test_ux.py         # User experience
-pytest tests/test_integration.py
+pytest tests/test_real.py       # Real file tests (assets required)
 ```
 
-### Run with verbose output
-```bash
-pytest -v
-```
+### Full test coverage
 
-### Test coverage summary
-
-| File | What it tests | Tests |
-|---|---|---|
-| `test_audio.py` | AudioExtractor — ffmpeg flags, failure handling | 7 |
-| `test_transcriber.py` | WhisperTranscriber — lazy loading, segments, text joining | 11 |
-| `test_llama.py` | LlamaClient — HTTP calls, fallback, payload format | 7 |
-| `test_enhancers.py` | All 5 enhancers — prompts, fallbacks, responses | 20 |
-| `test_output.py` | OutputManager — folders, file saving, SRT time format | 14 |
-| `test_integration.py` | Full pipeline — classes working together, E2E | 5 |
-| `test_cli.py` | CLI flags, --help, invalid args, error messages | 21 |
-| `test_ux.py` | Progress feedback, output quality, SRT validity, folder UX | 22 |
-| **Total** | | **141** |
+| File | What it tests | Tests | Requires |
+|---|---|---|---|
+| `test_audio.py` | AudioExtractor — ffmpeg flags, failure handling | 10 | Mocked |
+| `test_transcriber.py` | WhisperTranscriber — lazy loading, segments | 14 | Mocked |
+| `test_llama.py` | LlamaClient — HTTP calls, fallback, payload | 11 | Mocked |
+| `test_enhancers.py` | All 5 enhancers — prompts, fallbacks | 20 | Mocked |
+| `test_output.py` | OutputManager — folders, files, SRT format | 21 | Mocked |
+| `test_integration.py` | Classes working together, E2E | 7 | Mocked |
+| `test_cli.py` | CLI flags, --help, invalid args | 21 | Mocked |
+| `test_ux.py` | Progress, output quality, SRT validity | 22 | Mocked |
+| `test_real.py` | Real ffmpeg, Whisper, pipeline, edge cases | 29 | Real assets |
+| **Total** | | **170** | |
 
 ### Test types
 - **Unit** — each class tested in isolation with mocked dependencies
 - **Integration** — classes tested working together
 - **End-to-end** — full pipeline run with all external calls mocked
 - **CLI** — script invoked via subprocess as a real user would
-- **UX** — output quality, progress messages, error readability, SRT format validity
+- **UX** — output quality, progress messages, error readability, SRT validity
+- **Real** — actual ffmpeg and Whisper calls with generated video assets
 
 ---
 
@@ -195,3 +215,5 @@ pytest -v
 | Wrong model name | `sudo docker exec -it <id> ollama list` |
 | CUDA out of memory | `CUDA_VISIBLE_DEVICES="" python3 transcribe.py ...` to force CPU |
 | Flag not recognized | Use hyphens not underscores: `--whisper-model` not `--whisper_model` |
+| Real tests skipped | Run `python tests/assets/generate_assets.py` first |
+| Real tests all skip | Check `ASSETS_DIR` resolves correctly — needs `Path(__file__).resolve()` |
