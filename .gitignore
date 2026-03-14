@@ -1,4 +1,6 @@
 venv/
+.idea/
+package-lock.json
 __pycache__/
 *.pyc
 *.wav
