@@ -43,23 +43,31 @@ st.caption("Local, private video transcription powered by Whisper + Llama.")
 with st.sidebar:
     st.header("⚙️ Settings")
 
+    _WHISPER_OPTIONS = ["tiny", "base", "small", "medium", "large"]
+    if "whisper_model" not in st.session_state:
+        st.session_state.whisper_model = WHISPER_MODEL
+    if "llama_model" not in st.session_state:
+        st.session_state.llama_model = LLAMA_MODEL
+    if "use_llama" not in st.session_state:
+        st.session_state.use_llama = True
+
     whisper_model = st.selectbox(
         "Whisper model",
-        options=["tiny", "base", "small", "medium", "large"],
-        index=["tiny", "base", "small", "medium", "large"].index(WHISPER_MODEL),
+        options=_WHISPER_OPTIONS,
+        key="whisper_model",
         help="Larger models are slower but more accurate.",
     )
 
     llama_model = st.text_input(
         "Ollama model",
-        value=LLAMA_MODEL,
+        key="llama_model",
         help="Must match a model installed in Ollama (e.g. llama3:8b, mistral).",
     )
 
     st.divider()
     st.subheader("Llama features")
 
-    use_llama = st.toggle("Enable Llama enhancements", value=True)
+    use_llama = st.toggle("Enable Llama enhancements", key="use_llama")
 
     with st.container():
         use_speakers = st.checkbox("Speaker detection", value=True, disabled=not use_llama)
@@ -79,9 +87,9 @@ with st.sidebar:
 # ── Main: upload + run ────────────────────────────────────────────────────────
 
 uploaded_file = st.file_uploader(
-    "Upload a video file",
-    type=["mp4", "mov", "avi", "mkv", "webm", "m4v", "flv"],
-    help="Video is processed locally — nothing is sent to the cloud.",
+    "Upload a video or audio file",
+    type=["mp4", "mov", "avi", "mkv", "webm", "m4v", "flv", "ogg"],
+    help="File is processed locally — nothing is sent to the cloud.",
 )
 
 run_button = st.button(
